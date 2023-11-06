@@ -1,0 +1,48 @@
+# carrega as bibliotecas
+pacman::p_load(ade4, arules, car, caret, corrplot, data.table, dplyr, e1071, forcats, funModeling, ggplot2, mlbench, mltools, randomForest, rattle, tidyverse)
+
+# Leitura da base de dados
+FINAL_ALUNOS_RECIFE <- read.csv2("http://dados.recife.pe.gov.br/dataset/ce5168d4-d925-48f5-a193-03d4e0f587c7/resource/9afdd9e1-9bc2-4d40-a070-4dec351d6e0f/download/situacaofinalalunos2022.csv", stringsAsFactors = T)
+
+FINAL_ALUNOS_RECIFE
+
+# Treino e Teste: Pré-processamento
+particaoALUNOS = createDataPartition(FINAL_ALUNOS_RECIFE$situ, p=.7, list = F) # cria a partição 70-30
+treinoALUNOS = FINAL_ALUNOS_RECIFE[particaoALUNOS, ] # treino
+testeALUNOS = FINAL_ALUNOS_RECIFE[-particaoALUNOS, ] # - treino = teste
+
+# Validação Cruzada: Pré-processamento
+# Controle de treinamento
+train.control <- trainControl(method = "cv", number = 10, verboseIter = T) # controle de treino
+
+# Treinamentos
+## Máquina de Vetor De Suporte (SVM)
+ALUNOS_SVM_CLASS <- train(situ ~ anoensino + turma + alunosexo, data = FINAL_ALUNOS_RECIFE, method = "svmLinear", trControl = train.control)
+
+ALUNOS_SVM_CLASS # sumário da máquina de vetor de suporte
+plot(varImp(ALUNOS_SVM_CLASS))
+
+## Árvore de Decisão
+ALUNOS_RPART_CLASS <- train(situ ~ anoensino + turma + alunosexo, data = FINAL_ALUNOS_RECIFE, method = "rpart", trControl = train.control)
+
+summary(ALUNOS_RPART_CLASS)
+fancyRpartPlot(ALUNOS_RPART_CLASS$finalModel) # desenho da árvore
+plot(varImp(ALUNOS_RPART_CLASS)) # importância das variáveis
+
+# Bagging com Floresta Aleatória
+ALUNOS_RF_CLASS <- train(situ ~ anoensino + turma + alunosexo, data = FINAL_ALUNOS_RECIFE, method = "cforest", trControl = train.control)
+
+plot(ALUNOS_RF_CLASS) # evolução do modelo
+plot(varImp(ALUNOS_RF_CLASS)) # plot de importância
+
+# Boosting com Boosted Generalized Linear Model
+ALUNOS_ADA_CLASS <- train(situ ~ anoensino + turma + alunosexo, data = FINAL_ALUNOS_RECIFE, method = "glmboost", trControl = train.control)
+
+plot(ALUNOS_ADA_CLASS) # evolução do modelo
+print(ALUNOS_ADA_CLASS) # modelo
+summary(ALUNOS_ADA_CLASS) # sumário
+
+melhor_modelo <- resamples(list(SVM = ALUNOS_SVM_CLASS, RPART = ALUNOS_RPART_CLASS, RF = ALUNOS_RF_CLASS, ADABOOST = ALUNOS_ADA_CLASS))
+melhor_modelo
+
+summary(melhor_modelo)
