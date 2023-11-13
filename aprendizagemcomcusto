@@ -1,0 +1,27 @@
+# carrega aos pacotes
+pacman::p_load(ade4, arules, car, caret, corrplot, data.table, dplyr, e1071, forcats, funModeling, ggplot2, mlbench, mltools, randomForest, rattle, tidyverse)
+
+# Leitura da base de dados
+FINAL_ALUNOS_RECIFE <- read.csv2("http://dados.recife.pe.gov.br/dataset/ce5168d4-d925-48f5-a193-03d4e0f587c7/resource/9afdd9e1-9bc2-4d40-a070-4dec351d6e0f/download/situacaofinalalunos2022.csv", stringsAsFactors = T)
+
+table(FINAL_ALUNOS_RECIFE$situ)
+
+# Treino e Teste: Pré-processamento
+particaoALUNOS = createDataPartition(FINAL_ALUNOS_RECIFE$situ, p=.7, list = F) # cria a partição 70-30
+treinoALUNOS = FINAL_ALUNOS_RECIFE[particaoALUNOS, ] # treino
+testeALUNOS = FINAL_ALUNOS_RECIFE[-particaoALUNOS, ] # - treino = teste
+
+prop.table(table(treinoALUNOS$situ))
+
+# Validação Cruzada: Pré-processamento
+# Controle de treinamento
+train.control <- trainControl(method = "cv", number = 10, verboseIter = T) # controle de treino
+
+matrizCusto <- matrix(c(0,1,1000,0,1,1000,0,1,1000,0,1,1000,0,1,1000,0,1,1000), ncol = 9)
+rownames(matrizCusto) <- levels(treinoALUNOS$situ)
+colnames(matrizCusto) <- levels(treinoALUNOS$situ)
+matrizCusto
+
+ALUNOS_RF_CLASS <- randomForest(situ ~ nmodennome + nturesnome + alunosexo, data = treinoALUNOS, method = "cforest", parms = list(loss = matrizCusto))
+
+
