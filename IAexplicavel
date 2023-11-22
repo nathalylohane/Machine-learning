@@ -1,0 +1,108 @@
+
+View(USArrests)
+
+# carrega as bibliotecas
+pacman::p_load(
+  caret, corrplot, data.table, dplyr, fastDummies, ggplot2, SmartEDA, tidyverse)
+
+# preparação
+
+particaoArrests = createDataPartition(USArrests$Murder, p=.7, list = F) # cria a partição 70-30
+treinoUSArrests = USArrests[particaoArrests, ] # treino
+testeUSArrests = USArrests[-particaoArrests, ] # - treino = teste
+
+USArrests_formula <- Murder ~ . 
+
+lista_modelos <- c('lm', 'glmnet', 'glmboost', 'rpart', 'cforest')
+
+total_cv <- 10
+
+train.control <- trainControl(method = "cv", number = total_cv, verboseIter = T) # controle de treino
+
+pacman::p_load(caretEnsemble, doParallel)
+
+registerDoParallel(cores = detectCores() - 1)
+
+# modelagem
+
+USArrests_modelos <- caretList(
+  +   USArrests_formula, 
+  +   data = treinoUSArrests, 
+  +   methodList = lista_modelos, 
+  +   metric = "RMSE",
+  +   trControl = train.control,
+  +   tuneLength = 5)
+
+pacman::p_load(DALEX, iml, pdp)
+
+# importância
+
+USArrests_varImp <- varImp(USArrests_modelos$glmnet)
+
+USArrests_varImp_df <- as.data.frame(as.matrix(USArrests_varImp$importance))
+
+view(USArrests_varImp_df)
+
+USArrests_varImp_df <- USArrests_varImp_df %>% mutate(
+  variável = c('Assault', 'Urban Population ', 'Rape')
+)
+
+grafico_varImp <- ggplot(data=USArrests_varImp_df, aes(x=reorder(variável, -Overall), y=Overall)) + geom_bar(stat="identity", fill='#007095') + theme_minimal() + 
+  coord_flip() + 
+  labs(
+    title  = ~ underline("Importância das variáveis usadas no modelo"), 
+    subtitle = "US Arrests",
+    caption = 'Modelo: Regressão Linear Penalizada',
+    x = '',
+    y = 'Importância Relativa') + theme(
+      plot.title = element_text(face = 'bold', lineheight = 1, size = 16, color = "#007095"),
+      plot.subtitle = element_text(face = 'italic', size = 12, color = "#007095") ,
+      plot.caption = element_text(size = 10, color = "#007095") ,
+      strip.text = element_text(size = 10, color = "white") ,
+      axis.title.x = element_text(hjust=0, color = "#007095"),
+      axis.text.x = element_text(face = 'bold', colour = '#5bc0de', size = 12, angle = 75, vjust = .5),
+      axis.title.y = element_text(hjust=0, color = "#007095"),
+      axis.text.y = element_text(face = 'bold', colour = '#5bc0de', size = 12),
+      legend.position="bottom", 
+      legend.box = "horizontal",
+      legend.background = element_rect(fill="#dee2e6", colour ="white")
+    )
+
+grafico_varImp
+
+# perfil parcial
+
+treinoUSArrests_x <- dplyr::select(treinoUSArrests, -murder)
+testeUSArrests_x <- dplyr::select(testeUSArrests, -murder)
+
+explainer_rf <- DALEX::explain(model = USArrests_modelos$glmnet, data = testeUSArrests_x, y = testeUSArrests$Murder, label = "Regressão Penalizada")
+
+pdp_rf_species <- model_profile(explainer = explainer_rf, variables = "Rape", groups = "Assaults nivel")
+
+grafico_pdp <- plot(pdp_rf_species, geom = "profiles") +  
+  labs(
+    title  = ~ underline("Perfis de dependência parcial para RAPE e Assaults nivel"), 
+    subtitle = "US Arrests",
+    caption = 'Modelo: Regressão Penalizada',
+    tag = '',
+    x = 'Rape',
+    y = 'Murders',
+    colour = "Arrests nivel") + 
+  scale_colour_manual(
+    values = c('#f68d7c', '#8ecda6', 'blue'),
+    name = "Assault nivel") + 
+  theme(
+    plot.title = element_text(face = 'bold', lineheight = 1, size = 16, color = "#007095"),
+    plot.subtitle = element_text(face = 'italic', size = 12, color = "#007095") ,
+    plot.caption = element_text(size = 10, color = "#007095") ,
+    strip.text = element_text(size = 10, color = "white") ,
+    axis.title.x = element_text(hjust=0, color = "#007095"),
+    axis.text.x = element_text(face = 'bold', colour = '#5bc0de', size = 12),
+    axis.title.y = element_text(hjust=0, color = "#007095"),
+    axis.text.y = element_text(face = 'bold', colour = '#5bc0de', size = 12),
+    legend.position="bottom", 
+    legend.box = "horizontal",
+    legend.background = element_rect(fill="#dee2e6", colour ="white")
+  )
+
+grafico_pdp
