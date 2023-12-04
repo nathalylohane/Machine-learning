@@ -1,0 +1,120 @@
+---
+title: "Relatório Exploração do espaço"
+author: "Nathaly & Rennan"
+date: "04/12/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#carregando as bibliotecas 
+pacman::p_load(crosstalk, DT, plotly, ggplot2, data.table, dplyr, highcharter,ade4, arules, car, caret, coorplot, data.table, DMWR, e1071, forcats, funModeling, mlbench, mltools, randomForest, rattle, tidyverse, heatmaply, rpart, rpart.plot)
+
+
+# Carregando a base de dados 
+SpaceObjects <- read.csv("Warspace.csv", header = TRUE, sep = ",")
+
+# Renomeando as variáveis 
+novos_nomes <- c("iso", "year", "code", "Iron_steel_production", "Military_expenditures", "military_personnel", "energy_consumption", "total_population", "urban_population", "national_cabability_index", "version", "entity", "objects")
+names(SpaceObjects) <- novos_nomes
+
+#Retirando as colunas que não estão envolvidas na nossa análise
+SpaceObjects_new <- SpaceObjects[,-c(3, 11, 12)]
+```
+# Investimento no espaço {.tabset}
+## Tabela de investimento espacial e militar 
+Tabela por país/ano de investimentos em equipamentos militares e espaciais 
+```{r}
+SpaceObjects_new %>% datatable(
+  # Título
+  caption = htmltools::tags$caption(
+    # estilo do título usando css
+    style = 'text-align: center; font-size: 18px; font-weight: bold;',
+    'Tabela 1: Data Space Investment'),
+  # nomes das colunas
+  colnames = c('ISO Countries', 'Year', 'Iron and Steel Production', 'Military Expenditures', 'Military Personnel', 'Primary energy consumption', 'Total Population', 'Urban Population', 'Composite Index of National Capability', 'Objects'),
+  filter = "top",
+  # extensões para serem acrescentadas
+  extensions = c('Buttons', 'ColReorder', 'Responsive'),
+  # as opções configuram efetivamente as extensões
+  options = list(
+    #
+    dom = 'Blfrtip',
+    # primeiro vamos configurar os botões, adicionando funcionalidades
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    # permite ao usuário reordenar as colunas
+    colReorder = TRUE,
+    # controla quantas linhas serão mostradas por página
+    pageLength = 50, 
+    # ativa o spinner (indicador de processamento)
+    processing = TRUE
+  )
+) %>% # podemos usar também formatações de estilo avançadas para as colunas
+  formatStyle(
+    'objects',
+    color = styleInterval(1.6, c('black', 'white')),
+    background = styleColorBar(SpaceObjects_new$objects, 'lightblue')
+  )
+```
+
+## Objetos jogados no espaço por país/ano 
+gráfico de número de objetos lançados no espaço por ano/país
+```{r SD}
+# criando a base de dados compartilhada para poder fazer alterações 
+SD <- SharedData$new(SpaceObjects_new)
+```
+```{r, warning=FALSE, out.width='100%', echo = FALSE, message = FALSE}
+# Filtrando os objetos 
+filter_slider("objects", "Objects", SD, column=~objects, step=0.1, width=250)
+
+filter_checkbox("iso", "ISO Countries", SD, ~iso, inline = TRUE)
+
+# Gráfico objetos jogados no espaço por ano/país
+SD %>% plot_ly(x = ~year, y = ~objects, color = ~iso)
+```
+
+## Heatmap gastos militares por país e ano
+```{r}
+heatmap_plot <- plot_ly(
+  x = SpaceObjects_new$year,
+  y = SpaceObjects_new$iso,
+  z = SpaceObjects_new$Military_expenditures,
+  type = "heatmap")
+
+```
+
+```{r}
+heatmap_plot
+```
+```{r, include=FALSE}
+# Adicionando uma constante nos valores da variC!vel alvo para tentar ajustar o 0
+constante <- 0.001
+SpaceObjects_new$objects <- SpaceObjects_new$objects + constante
+
+# Dividindo em treino e teste 
+particaoSpace = createDataPartition(SpaceObjects_new$objects, p=.7, list = F) # cria a partiC'C#o 70-30
+treinoSpace = SpaceObjects_new # treino
+testeSpace = SpaceObjects_new[-particaoSpace, ] # - treino = teste
+
+# Controle de treino
+train.control <- trainControl(method = "cv", number = 10, verboseIter = T)
+
+
+# Bagging com Floresta AleatC3ria
+Space_RF_CLASS <- train(objects ~ Iron_steel_production + Military_expenditures + military_personnel + energy_consumption + total_population + national_cabability_index, data = treinoSpace, method = "cforest", trControl = train.control)
+```
+
+
+# Saídas de Machine Learning {.tabset}    
+## Variáveis de importância 
+```{r}
+plot(varImp(Space_RF_CLASS)) # plot de importância
+```
+## Árvore de decisão 
+```{r, include=FALSE}
+modelo_arvore <- rpart(objects ~ Military_expenditures + military_personnel + national_cabability_index, data = SpaceObjects_new, method = "anova")
+```
+
+```{r}
+rpart.plot(modelo_arvore, box.palette = "auto")
+```
