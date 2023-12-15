@@ -112,9 +112,9 @@ plot(varImp(Space_RF_CLASS)) # plot de importância
 ```
 ## Árvore de decisão 
 ```{r, include=FALSE}
-modelo_arvore <- rpart(objects ~ Military_expenditures + military_personnel + national_cabability_index, data = SpaceObjects_new, method = "anova")
+options(scipen = 999)
+modelo_arvore <- rpart(objects ~ year + Military_expenditures + military_personnel + energy_consumption, data = SpaceObjects_new, method = "anova")
 ```
 
 ```{r}
 rpart.plot(modelo_arvore, box.palette = "auto")
-```
