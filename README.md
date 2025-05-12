@@ -14,34 +14,34 @@ Este repositório reúne os scripts desenvolvidos durante a disciplina de Machin
 
 ---
 
-## 📌 Técnicas aplicadas e sua importância
+##  Técnicas aplicadas e sua importância
 
-### ✅ **Modelos de Classificação com `caret`**
+###  **Modelos de Classificação com `caret`**
 - Automatiza o treinamento e validação cruzada de diversos algoritmos
 - Permite selecionar o melhor modelo com base em métricas de desempenho
 
-### ✅ **IA Explicável (XAI)**
+###  **IA Explicável (XAI)**
 - Utilização de árvore de decisão para facilitar a interpretação de modelos
 - Visualização das divisões e da lógica de classificação
 
-### ✅ **Aprendizado com Custo**
+###  **Aprendizado com Custo**
 - Atribui penalidades diferentes para erros de classificação
 - Útil em contextos com classes desbalanceadas ou custo desigual de erro
 
-### ✅ **Balanceamento de Dados**
+### **Balanceamento de Dados**
 - Técnicas como oversampling, undersampling e SMOTE aplicadas para corrigir desequilíbrios
 - Melhora a generalização dos modelos em dados reais
 
-### ✅ **Regras de Associação**
+### **Regras de Associação**
 - Geração de padrões do tipo “se-então” entre atributos de uma base
 - Método útil para extração de conhecimento em grandes volumes de dados
 
-### ✅ **Exploração Espacial com RMarkdown**
+### **Exploração Espacial com RMarkdown**
 - Relatório analítico integrando modelagem, gráficos e texto explicativo
 
 ---
 
-## 📁 Estrutura do Repositório
+## Estrutura do Repositório
 
 | Script / Arquivo              | Objetivo / Conteúdo Principal                                              |
 |-------------------------------|---------------------------------------------------------------------------|
@@ -59,7 +59,7 @@ Este repositório reúne os scripts desenvolvidos durante a disciplina de Machin
 
 ---
 
-## 🧠 O que este repositório demonstra
+## O que este repositório demonstra
 
 Este projeto representa a aplicação prática de diversas técnicas avançadas de análise de dados, úteis tanto na pesquisa acadêmica quanto em contextos aplicados:
 
@@ -82,6 +82,6 @@ Este projeto representa a aplicação prática de diversas técnicas avançadas 
 Sou Cientista Política e mestranda pela UFPE, com foco em análise de dados aplicados a políticas públicas, ESG e inteligência política. Tenho experiência com entrevistas, observação participantes, análise qualitativa e quantitativa de dados, e uso dos dados para gerar impacto institucional e orientar decisões estratégicas.
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto é de uso educacional e está licenciado sob os termos da [MIT License](LICENSE).
